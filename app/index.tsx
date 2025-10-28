@@ -1,19 +1,22 @@
-import { useRouter } from "expo-router";
+import { useAuth } from "@/lib/auth-context";
+import { useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { View } from "react-native";
 import { ActivityIndicator } from "react-native-paper";
 
 export default function Index() {
   const router = useRouter();
-  const isAuth = false;
+  const { user, isLoadingUser } = useAuth();
+  const segments = useSegments();
 
   useEffect(() => {
-    if (isAuth) {
-      router.replace("/(tabs)");
-    } else {
+    const inAuthGroup = segments[0] === "auth";
+    if (!user && !inAuthGroup && !isLoadingUser) {
       router.replace("/auth");
+    } else if (user && inAuthGroup && !isLoadingUser) {
+      router.replace("/(tabs)");
     }
-  }, [isAuth]);
+  }, [user, segments]);
 
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

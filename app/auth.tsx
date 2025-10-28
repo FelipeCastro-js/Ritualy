@@ -1,3 +1,5 @@
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 
@@ -10,6 +12,9 @@ export default function AuthScreen() {
   const [error, setError] = useState<string | null>("");
 
   const theme = useTheme();
+  const router = useRouter();
+
+  const { singUp, signIn } = useAuth();
 
   const handleAuth = async () => {
     if (!email || !password) {
@@ -22,6 +27,21 @@ export default function AuthScreen() {
       return;
     }
     setError(null);
+
+    if (isSignUp) {
+      const error = await singUp(email, password);
+      if (error) {
+        setError(error);
+        return;
+      }
+    } else {
+      const error = await signIn(email, password);
+      if (error) {
+        setError(error);
+        return;
+      }
+      router.replace("/(tabs)");
+    }
   };
 
   const handleSwitchMode = () => {
@@ -36,6 +56,7 @@ export default function AuthScreen() {
       <View style={styles.content}>
         {isSignUp ? "Create Account" : "Welcome Back"}
         <Text style={styles.title} variant="headlineMedium">
+          {""}
           {isSignUp ? "Create Account" : "Welcome Back"}
         </Text>
 
