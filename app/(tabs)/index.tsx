@@ -1,15 +1,15 @@
 import {
+  AppwriteRealtimeResponse,
   client,
   database,
   DB_ID,
   HABITS_COLLECTION_ID,
-  RealTimeResponse,
 } from "@/lib/appwrite";
 import { useAuth } from "@/lib/auth-context";
 import { Habit } from "@/types/database.type";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { Query } from "react-native-appwrite";
 import { Button, Surface, Text } from "react-native-paper";
 
@@ -19,38 +19,29 @@ export default function Index() {
   const [habits, setHabits] = useState<Habit[]>();
 
   useEffect(() => {
-    if (user) {
-      const channel = `databases.${DB_ID}.collections.${HABITS_COLLECTION_ID}.documents`;
-      const habitsSubscription = client.subscribe(
-        channel,
-        (response: RealTimeResponse) => {
-          if (
-            response.events.includes(
-              "databases.*.collections.*.documents.*.create"
-            )
-          ) {
-            fetchHabits();
-          } else if (
-            response.events.includes(
-              "databases.*.collections.*.documents.*.update"
-            )
-          ) {
-            fetchHabits();
-          } else if (
-            response.events.includes(
-              "databases.*.collections.*.documents.*.delete"
-            )
-          ) {
-            fetchHabits();
-          }
-        }
-      );
-      fetchHabits();
+    if (!user) return;
 
-      return () => {
-        habitsSubscription();
-      };
-    }
+    const channel = `databases.${DB_ID}.collections.${HABITS_COLLECTION_ID}.documents`;
+
+    const unsubscribe = client.subscribe(
+      channel,
+      (response: AppwriteRealtimeResponse) => {
+        const relevantEvents = [
+          "databases.*.collections.*.documents.*.create",
+          "databases.*.collections.*.documents.*.update",
+          "databases.*.collections.*.documents.*.delete",
+        ];
+
+        if (response.events.some((event) => relevantEvents.includes(event))) {
+          fetchHabits();
+        }
+      }
+    );
+
+    fetchHabits();
+    return () => {
+      unsubscribe();
+    };
   }, [user]);
 
   const fetchHabits = async () => {
@@ -75,43 +66,42 @@ export default function Index() {
           Sign Out
         </Button>
       </View>
-
-      {habits?.length === 0 ? (
-        <View style={styles.emptyState}>
-          {" "}
-          <Text style={styles.emptyStateText}>
-            No Habits yet. Add your first Habit!
-          </Text>
-        </View>
-      ) : (
-        habits?.map((habit, key) => (
-          <Surface style={styles.card} elevation={0}>
-            <View key={key} style={styles.cardContent}>
-              <Text style={styles.cardTitle}> {habit.title}</Text>
-              <Text style={styles.cardDescription}>{habit.description}</Text>
-              <View style={styles.cardFooter}>
-                <View style={styles.streakBadge}>
-                  {" "}
-                  <MaterialCommunityIcons
-                    name="fire"
-                    size={18}
-                    color={"#ff9800"}
-                  />
-                  <Text style={styles.streakText}>
-                    {habit.streak_count} day streak
-                  </Text>
-                </View>
-                <View style={styles.frequencyBadge}>
-                  <Text style={styles.frequencyText}>
-                    {habit.frequency.charAt(0).toUpperCase() +
-                      habit.frequency.slice(1)}
-                  </Text>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {habits?.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              No Habits yet. Add your first Habit!
+            </Text>
+          </View>
+        ) : (
+          habits?.map((habit, key) => (
+            <Surface key={key} style={styles.card} elevation={0}>
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle}> {habit.title}</Text>
+                <Text style={styles.cardDescription}>{habit.description}</Text>
+                <View style={styles.cardFooter}>
+                  <View style={styles.streakBadge}>
+                    <MaterialCommunityIcons
+                      name="fire"
+                      size={18}
+                      color={"#ff9800"}
+                    />
+                    <Text style={styles.streakText}>
+                      {habit.streak_count} day streak
+                    </Text>
+                  </View>
+                  <View style={styles.frequencyBadge}>
+                    <Text style={styles.frequencyText}>
+                      {habit.frequency.charAt(0).toUpperCase() +
+                        habit.frequency.slice(1)}
+                    </Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          </Surface>
-        ))
-      )}
+            </Surface>
+          ))
+        )}
+      </ScrollView>
     </View>
   );
 }
