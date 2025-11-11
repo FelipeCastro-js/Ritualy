@@ -14,7 +14,9 @@ export const HABITS_COLLECTION_ID = process.env
   .EXPO_PUBLIC_HABITS_COLLECTION_ID as string;
 
 export const COMPLETIONS_COLLECTION_ID = process.env
-  .EXPO_PUBLIC_COMPLETIONS_COLLECTION as string;
+  .EXPO_PUBLIC_COMPLETIONS_COLLECTION_ID as string;
+
+console.log(COMPLETIONS_COLLECTION_ID);
 export type AppwriteRealtimeResponse = {
   events: string[];
   payload: any;
